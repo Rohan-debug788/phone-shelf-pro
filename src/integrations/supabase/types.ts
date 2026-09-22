@@ -14,16 +14,240 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_log: {
+        Row: {
+          created_at: string
+          detail: string | null
+          email: string | null
+          event: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          email?: string | null
+          event: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          email?: string | null
+          event?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      company_settings: {
+        Row: {
+          address: string
+          contact_info: string
+          id: boolean
+          shop_name: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string
+          contact_info?: string
+          id?: boolean
+          shop_name?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          contact_info?: string
+          id?: boolean
+          shop_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          employee_id: string | null
+          id: string
+          is_active: boolean
+          must_change_password: boolean
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          employee_id?: string | null
+          id: string
+          is_active?: boolean
+          must_change_password?: boolean
+          name?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          employee_id?: string | null
+          id?: string
+          is_active?: boolean
+          must_change_password?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
+      sales: {
+        Row: {
+          buyer_name: string | null
+          buyer_phone: string | null
+          created_at: string
+          id: string
+          sold_by_id: string
+          stock_unit_id: string
+        }
+        Insert: {
+          buyer_name?: string | null
+          buyer_phone?: string | null
+          created_at?: string
+          id?: string
+          sold_by_id: string
+          stock_unit_id: string
+        }
+        Update: {
+          buyer_name?: string | null
+          buyer_phone?: string | null
+          created_at?: string
+          id?: string
+          sold_by_id?: string
+          stock_unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_stock_unit_id_fkey"
+            columns: ["stock_unit_id"]
+            isOneToOne: true
+            referencedRelation: "stock_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_transfers: {
+        Row: {
+          created_at: string
+          from_holder_id: string | null
+          from_status: Database["public"]["Enums"]["stock_status"]
+          id: string
+          performed_by_id: string
+          stock_unit_id: string
+          to_holder_id: string | null
+          to_status: Database["public"]["Enums"]["stock_status"]
+        }
+        Insert: {
+          created_at?: string
+          from_holder_id?: string | null
+          from_status: Database["public"]["Enums"]["stock_status"]
+          id?: string
+          performed_by_id: string
+          stock_unit_id: string
+          to_holder_id?: string | null
+          to_status: Database["public"]["Enums"]["stock_status"]
+        }
+        Update: {
+          created_at?: string
+          from_holder_id?: string | null
+          from_status?: Database["public"]["Enums"]["stock_status"]
+          id?: string
+          performed_by_id?: string
+          stock_unit_id?: string
+          to_holder_id?: string | null
+          to_status?: Database["public"]["Enums"]["stock_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_transfers_stock_unit_id_fkey"
+            columns: ["stock_unit_id"]
+            isOneToOne: false
+            referencedRelation: "stock_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_units: {
+        Row: {
+          created_at: string
+          current_holder_id: string | null
+          date_added: string
+          date_sold: string | null
+          id: string
+          imei: string
+          model: string
+          sold_by_id: string | null
+          status: Database["public"]["Enums"]["stock_status"]
+          supplier: string | null
+          variant: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_holder_id?: string | null
+          date_added?: string
+          date_sold?: string | null
+          id?: string
+          imei: string
+          model: string
+          sold_by_id?: string | null
+          status?: Database["public"]["Enums"]["stock_status"]
+          supplier?: string | null
+          variant?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_holder_id?: string | null
+          date_added?: string
+          date_sold?: string | null
+          id?: string
+          imei?: string
+          model?: string
+          sold_by_id?: string | null
+          status?: Database["public"]["Enums"]["stock_status"]
+          supplier?: string | null
+          variant?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_active_user: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "agent"
+      stock_status: "in_store" | "with_agent" | "sold"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +374,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "agent"],
+      stock_status: ["in_store", "with_agent", "sold"],
+    },
   },
 } as const
