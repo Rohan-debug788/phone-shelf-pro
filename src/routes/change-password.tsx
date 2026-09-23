@@ -25,7 +25,7 @@ export const Route = createFileRoute("/change-password")({
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/auth" });
   },
-  component: ChangePassword;
+  component: ChangePassword,
 });
 
 function ChangePassword() {
