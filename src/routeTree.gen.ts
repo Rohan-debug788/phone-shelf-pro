@@ -14,8 +14,11 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ChangePasswordRouteImport } from './routes/change-password'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthenticatedAddStockRouteImport } from './routes/_authenticated/add-stock'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
+import { Route as AuthenticatedSellRouteImport } from './routes/_authenticated/sell'
+import { Route as AuthenticatedTransfersRouteImport } from './routes/_authenticated/transfers'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -41,6 +44,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAddStockRoute = AuthenticatedAddStockRouteImport.update({
+  id: '/add-stock',
+  path: '/add-stock',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -51,22 +59,38 @@ const AuthenticatedInventoryRoute = AuthenticatedInventoryRouteImport.update({
   path: '/inventory',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSellRoute = AuthenticatedSellRouteImport.update({
+  id: '/sell',
+  path: '/sell',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTransfersRoute = AuthenticatedTransfersRouteImport.update({
+  id: '/transfers',
+  path: '/transfers',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/change-password': typeof ChangePasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/add-stock': typeof AuthenticatedAddStockRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inventory': typeof AuthenticatedInventoryRoute
+  '/sell': typeof AuthenticatedSellRoute
+  '/transfers': typeof AuthenticatedTransfersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/change-password': typeof ChangePasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/add-stock': typeof AuthenticatedAddStockRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inventory': typeof AuthenticatedInventoryRoute
+  '/sell': typeof AuthenticatedSellRoute
+  '/transfers': typeof AuthenticatedTransfersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -75,8 +99,11 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/change-password': typeof ChangePasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/add-stock': typeof AuthenticatedAddStockRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
+  '/_authenticated/sell': typeof AuthenticatedSellRoute
+  '/_authenticated/transfers': typeof AuthenticatedTransfersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -85,16 +112,22 @@ export interface FileRouteTypes {
     | '/auth'
     | '/change-password'
     | '/reset-password'
+    | '/add-stock'
     | '/dashboard'
     | '/inventory'
+    | '/sell'
+    | '/transfers'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/change-password'
     | '/reset-password'
+    | '/add-stock'
     | '/dashboard'
     | '/inventory'
+    | '/sell'
+    | '/transfers'
   id:
     | '__root__'
     | '/'
@@ -102,8 +135,11 @@ export interface FileRouteTypes {
     | '/auth'
     | '/change-password'
     | '/reset-password'
+    | '/_authenticated/add-stock'
     | '/_authenticated/dashboard'
     | '/_authenticated/inventory'
+    | '/_authenticated/sell'
+    | '/_authenticated/transfers'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -151,6 +187,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/add-stock': {
+      id: '/_authenticated/add-stock'
+      path: '/add-stock'
+      fullPath: '/add-stock'
+      preLoaderRoute: typeof AuthenticatedAddStockRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -165,17 +208,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInventoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sell': {
+      id: '/_authenticated/sell'
+      path: '/sell'
+      fullPath: '/sell'
+      preLoaderRoute: typeof AuthenticatedSellRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/transfers': {
+      id: '/_authenticated/transfers'
+      path: '/transfers'
+      fullPath: '/transfers'
+      preLoaderRoute: typeof AuthenticatedTransfersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAddStockRoute: typeof AuthenticatedAddStockRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
+  AuthenticatedSellRoute: typeof AuthenticatedSellRoute
+  AuthenticatedTransfersRoute: typeof AuthenticatedTransfersRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAddStockRoute: AuthenticatedAddStockRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
+  AuthenticatedSellRoute: AuthenticatedSellRoute,
+  AuthenticatedTransfersRoute: AuthenticatedTransfersRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
