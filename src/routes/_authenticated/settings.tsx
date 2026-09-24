@@ -46,7 +46,7 @@ function SettingsPage() {
       .update({ ...f, shop_name: f.shop_name.trim().slice(0, 120), updated_at: new Date().toISOString() })
       .eq("id", true);
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Shop details saved");
     qc.invalidateQueries({ queryKey: ["company-settings"] });
   }

@@ -55,7 +55,7 @@ function Reports() {
   });
   const byDay = Object.entries(salesRows.reduce<Record<string, number>>((a, r) => ((a[r.date] = (a[r.date] ?? 0) + 1), a), {})).sort().reverse().map(([date, units]) => ({ date, units }));
   const byAgent = Object.entries(salesRows.reduce<Record<string, number>>((a, r) => ((a[r.sold_by] = (a[r.sold_by] ?? 0) + 1), a), {})).sort((a, b) => b[1] - a[1]).map(([agent, units]) => ({ agent, units }));
-  const aged = stock.filter((u) => u.status !== "sold").map((u) => ({ imei: u.imei, model: u.model, variant: u.variant ?? "", status: statusLabel[u.status], holder: nameOf(u.current_holder_id), date_added: formatDate(u.date_added), days: daysSince(u.date_added) })).sort((a, b) => b.days - a.days);
+  const aged = stock.filter((u) => u.status !== "sold").map((u) => ({ imei: u.imei, model: u.model, variant: u.variant ?? "", status: statusLabel[u.status] ?? u.status, holder: nameOf(u.current_holder_id), date_added: formatDate(u.date_added), days: daysSince(u.date_added) })).sort((a, b) => b.days - a.days);
   const holdings = people.filter((p) => p.role === "agent").map((p) => {
     const held = stock.filter((u) => u.status === "with_agent" && u.current_holder_id === p.id);
     return { agent: nameOf(p.id), units_held: held.length, imeis: held.map((u) => u.imei).join(" ") };
