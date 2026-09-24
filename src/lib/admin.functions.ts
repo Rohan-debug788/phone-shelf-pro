@@ -183,3 +183,13 @@ export const recordAuthEvent = createServerFn({ method: "POST" })
     });
     return { ok: true as const };
   });
+
+export const listVerification = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+    if (error) throw new Error(error.message);
+    return data.users.map((u) => ({ id: u.id, verified: Boolean(u.email_confirmed_at) }));
+  });
