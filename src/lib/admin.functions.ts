@@ -18,48 +18,8 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
   if (error || !data) throw new Error("Forbidden: admin access required");
 }
 
-/** Creates the very first admin account. Refuses once any admin exists. */
-export const bootstrapFirstAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string; name: string; password: string }) =>
-    z
-      .object({
-        email: z.string().trim().email().max(255),
-        name: z.string().trim().min(1).max(100),
-        password: z.string().min(8).max(200),
-      })
-      .parse(d),
-  )
-  .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { count, error: countError } = await supabaseAdmin
-      .from("user_roles")
-      .select("id", { count: "exact", head: true })
-      .eq("role", "admin");
-    if (countError) throw new Error(countError.message);
-    if ((count ?? 0) > 0) throw new Error("An administrator already exists for this shop.");
-
-    const { error } = await supabaseAdmin.auth.admin.createUser({
-      email: data.email,
-      password: data.password,
-      email_confirm: true,
-      user_metadata: {
-        name: data.name,
-        role: "admin",
-        must_change_password: false,
-      },
-    });
-    if (error) throw new Error(error.message);
-    return { ok: true as const };
-  });
-
-export const adminExists = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { count } = await supabaseAdmin
-    .from("user_roles")
-    .select("id", { count: "exact", head: true })
-    .eq("role", "admin");
-  return { exists: (count ?? 0) > 0 };
-});
+// First-admin self-setup was removed: the owner account exists, and new
+// admins can only be created by an existing admin via createAgent.
 
 export const createAgent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
