@@ -60,7 +60,7 @@ function ChangePassword() {
       const { data } = await supabase.auth.getUser();
       if (data.user) {
         await supabase.from("profiles").update({ must_change_password: false }).eq("id", data.user.id);
-        await logEvent({ data: { email: data.user.email ?? "", event: "password_changed" } });
+        await logEvent({ data: { event: "password_changed" } });
       }
       await queryClient.invalidateQueries();
       toast.success("Password updated");

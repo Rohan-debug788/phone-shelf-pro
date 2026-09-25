@@ -18,48 +18,8 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
   if (error || !data) throw new Error("Forbidden: admin access required");
 }
 
-/** Creates the very first admin account. Refuses once any admin exists. */
-export const bootstrapFirstAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string; name: string; password: string }) =>
-    z
-      .object({
-        email: z.string().trim().email().max(255),
-        name: z.string().trim().min(1).max(100),
-        password: z.string().min(8).max(200),
-      })
-      .parse(d),
-  )
-  .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { count, error: countError } = await supabaseAdmin
-      .from("user_roles")
-      .select("id", { count: "exact", head: true })
-      .eq("role", "admin");
-    if (countError) throw new Error(countError.message);
-    if ((count ?? 0) > 0) throw new Error("An administrator already exists for this shop.");
-
-    const { error } = await supabaseAdmin.auth.admin.createUser({
-      email: data.email,
-      password: data.password,
-      email_confirm: true,
-      user_metadata: {
-        name: data.name,
-        role: "admin",
-        must_change_password: false,
-      },
-    });
-    if (error) throw new Error(error.message);
-    return { ok: true as const };
-  });
-
-export const adminExists = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { count } = await supabaseAdmin
-    .from("user_roles")
-    .select("id", { count: "exact", head: true })
-    .eq("role", "admin");
-  return { exists: (count ?? 0) > 0 };
-});
+// First-admin self-setup was removed: the owner account exists, and new
+// admins can only be created by an existing admin via createAgent.
 
 export const createAgent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -149,37 +109,81 @@ export const adminResetPassword = createServerFn({ method: "POST" })
     return { tempPassword: password };
   });
 
-/** Rate limiting + audit for sign-in attempts. */
-export const checkLoginAllowed = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string }) => z.object({ email: z.string().trim().email().max(255) }).parse(d))
+/**
+ * Server-side sign-in: rate limit, verify the password with the auth service,
+ * and write the audit record ourselves so callers cannot forge failures.
+ */
+export const signInWithPassword = createServerFn({ method: "POST" })
+  .inputValidator((d: { email: string; password: string }) =>
+    z
+      .object({ email: z.string().trim().email().max(255), password: z.string().min(1).max(200) })
+      .parse(d),
+  )
   .handler(async ({ data }) => {
+    const email = data.email.toLowerCase();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const since = new Date(Date.now() - 15 * 60_000).toISOString();
     const { count } = await supabaseAdmin
       .from("audit_log")
       .select("id", { count: "exact", head: true })
       .eq("event", "login_failed")
-      .eq("email", data.email.toLowerCase())
+      .eq("email", email)
       .gte("created_at", since);
-    return { allowed: (count ?? 0) < 8 };
+    if ((count ?? 0) >= 8) return { ok: false as const, reason: "locked" as const };
+
+    const { createClient } = await import("@supabase/supabase-js");
+    const authClient = createClient(process.env["SUPABASE_URL"]!, process.env["SUPABASE_PUBLISHABLE_KEY"]!, {
+      auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+    });
+    const { data: signed, error } = await authClient.auth.signInWithPassword({
+      email,
+      password: data.password,
+    });
+    if (error || !signed.session) {
+      await supabaseAdmin.from("audit_log").insert({ email, event: "login_failed" });
+      return { ok: false as const, reason: "invalid" as const };
+    }
+    await supabaseAdmin
+      .from("audit_log")
+      .insert({ user_id: signed.user?.id ?? null, email, event: "login_success" });
+    return {
+      ok: true as const,
+      access_token: signed.session.access_token,
+      refresh_token: signed.session.refresh_token,
+    };
   });
 
-export const recordAuthEvent = createServerFn({ method: "POST" })
-  .inputValidator((d: { email?: string; event: string; detail?: string }) =>
-    z
-      .object({
-        email: z.string().trim().max(255).optional(),
-        event: z.enum(["login_failed", "login_success", "password_changed", "password_reset_requested"]),
-        detail: z.string().max(300).optional(),
-      })
-      .parse(d),
+/** Sends a reset link server-side and records the request. */
+export const requestPasswordReset = createServerFn({ method: "POST" })
+  .inputValidator((d: { email: string; origin: string }) =>
+    z.object({ email: z.string().trim().email().max(255), origin: z.string().url().max(200) }).parse(d),
   )
   .handler(async ({ data }) => {
+    const email = data.email.toLowerCase();
+    const origin = new URL(data.origin).origin;
+    const { createClient } = await import("@supabase/supabase-js");
+    const authClient = createClient(process.env["SUPABASE_URL"]!, process.env["SUPABASE_PUBLISHABLE_KEY"]!, {
+      auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+    });
+    await authClient.auth.resetPasswordForEmail(email, { redirectTo: `${origin}/reset-password` }).catch(() => undefined);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("audit_log").insert({ email, event: "password_reset_requested" });
+    return { ok: true as const };
+  });
+
+/** Audit events for the signed-in user; identity comes from the verified token. */
+export const recordAuthEvent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { event: "password_changed" }) =>
+    z.object({ event: z.enum(["password_changed"]) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const email = typeof context.claims.email === "string" ? context.claims.email.toLowerCase() : null;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.from("audit_log").insert({
-      email: data.email?.toLowerCase() ?? null,
+      user_id: context.userId,
+      email,
       event: data.event,
-      detail: data.detail ?? null,
     });
     return { ok: true as const };
   });
