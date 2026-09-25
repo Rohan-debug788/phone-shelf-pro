@@ -8,6 +8,13 @@
       "when": 1790091914341,
       "tag": "0000_phone_shop_core_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790331404538,
+      "tag": "0001_tighten_read_policies",
+      "breakpoints": true
     }
   ]
 }

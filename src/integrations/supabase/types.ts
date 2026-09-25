@@ -244,6 +244,17 @@ export type Database = {
         Returns: boolean
       }
       is_active_user: { Args: { _user_id: string }; Returns: boolean }
+      staff_directory: {
+        Args: never
+        Returns: {
+          created_at: string
+          employee_id: string
+          id: string
+          is_active: boolean
+          name: string
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "agent"
