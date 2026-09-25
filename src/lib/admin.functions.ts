@@ -48,7 +48,15 @@ export const createAgent = createServerFn({ method: "POST" })
         must_change_password: true,
       },
     });
-    if (error) throw new Error(error.message);
+    if (error) {
+      const exists = /already been registered|already exists/i.test(error.message);
+      return {
+        ok: false as const,
+        error: exists
+          ? "An account with this email already exists. Use a different email, or reactivate/reset the existing account."
+          : error.message,
+      };
+    }
 
     // Send the verification email (non-blocking for login).
     await supabaseAdmin.auth.admin
@@ -62,7 +70,7 @@ export const createAgent = createServerFn({ method: "POST" })
       detail: `Account created for ${data.name}`,
     });
 
-    return { tempPassword: password, userId: created.user?.id ?? null };
+    return { ok: true as const, tempPassword: password, userId: created.user?.id ?? null };
   });
 
 export const setUserActive = createServerFn({ method: "POST" })
