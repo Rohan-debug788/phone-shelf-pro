@@ -36,16 +36,27 @@ export type SaleRow = {
 export const profilesQuery = queryOptions({
   queryKey: ["profiles"],
   queryFn: async () => {
-    const [{ data: profiles, error }, { data: roles }] = await Promise.all([
-      supabase.from("profiles").select("*").order("created_at", { ascending: true }),
-      supabase.from("user_roles").select("user_id, role"),
+    // Directory (names only) is visible to active staff; full profile rows
+    // (email etc.) are only returned by RLS for self or admins.
+    const [{ data: directory, error }, { data: profiles }] = await Promise.all([
+      supabase.rpc("staff_directory"),
+      supabase.from("profiles").select("*"),
     ]);
     if (error) throw error;
-    const roleMap = new Map((roles ?? []).map((r) => [r.user_id, r.role]));
-    return (profiles ?? []).map((p) => ({
-      ...(p as Profile),
-      role: (roleMap.get(p.id) ?? "agent") as "admin" | "agent",
-    }));
+    const full = new Map((profiles ?? []).map((p) => [p.id, p as Profile]));
+    return (directory ?? []).map((d) => {
+      const p = full.get(d.id);
+      return {
+        id: d.id,
+        name: d.name,
+        employee_id: d.employee_id,
+        is_active: d.is_active,
+        created_at: d.created_at,
+        email: p?.email ?? "",
+        must_change_password: p?.must_change_password ?? false,
+        role: d.role as "admin" | "agent",
+      };
+    });
   },
 });
 
