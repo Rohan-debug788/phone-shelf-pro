@@ -50,6 +50,10 @@ function UsersPage() {
     setBusy(true);
     try {
       const r = await create({ data: { ...form, role: form.role as "agent" | "admin" } });
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
       setSecret({ email: form.email, password: r.tempPassword });
       setForm({ name: "", email: "", employeeId: "", role: "agent" });
       qc.invalidateQueries({ queryKey: ["profiles"] });
