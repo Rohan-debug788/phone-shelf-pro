@@ -139,9 +139,20 @@ function AddStock() {
 
   function downloadTemplate() {
     downloadCsv("stock-upload-template.csv", [
-      ["imei", "model", "variant", "supplier", "date_received"],
-      ["356938035643809", "Galaxy S24 Ultra", "256GB Titanium Grey", "Metro Distributors", "2026-09-26"],
-      ["356938035643810", "iPhone 15", "128GB Black", "Metro Distributors", "2026-09-26"],
+      {
+        imei: "356938035643809",
+        model: "Galaxy S24 Ultra",
+        variant: "256GB Titanium Grey",
+        supplier: "Metro Distributors",
+        date_received: new Date().toISOString().slice(0, 10),
+      },
+      {
+        imei: "356938035643810",
+        model: "iPhone 15",
+        variant: "128GB Black",
+        supplier: "Metro Distributors",
+        date_received: new Date().toISOString().slice(0, 10),
+      },
     ]);
   }
 
